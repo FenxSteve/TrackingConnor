@@ -219,30 +219,21 @@ class ConnorTracker {
         };
     }
 
-    // Manual tracking fallback - check if we have recent manual updates
+    // Manual tracking fallback with real current position
     async getManualTrackingFallback() {
-        // This could be enhanced to accept manual position updates
-        // For now, return a more recent approximate position for RFA operations
-        const recentPositions = [
-            { lat: 50.8, lng: -1.4, location: 'Portsmouth area' },
-            { lat: 36.1, lng: -5.3, location: 'Gibraltar' },
-            { lat: 43.3, lng: 5.4, location: 'Mediterranean' },
-            { lat: 35.9, lng: 14.5, location: 'Malta area' }
-        ];
-
-        // Use a semi-random but realistic position
-        const pos = recentPositions[Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % recentPositions.length];
+        // Real position from MyShipTracking as of latest check
+        // Position: 35.08466° / 129.10211° - Japan Sea (Last seen: 2025-08-10)
 
         return {
             mmsi: this.RFA_TIDESPRING_MMSI,
             name: 'RFA TIDESPRING',
-            latitude: pos.lat,
-            longitude: pos.lng,
-            speed: 0,
-            course: 0,
-            timestamp: new Date().toISOString(),
-            status: `📍 Estimated position near ${pos.location}`,
-            source: 'Manual tracking fallback',
+            latitude: 35.08466,    // Real current latitude
+            longitude: 129.10211,  // Real current longitude
+            speed: 3.9,            // Real current speed in knots
+            course: 0,             // Course not available in fallback
+            timestamp: '2025-08-10T23:27:00Z', // Last known update time
+            status: '🌏 Connor is in Japan Sea area - last known position',
+            source: 'Real position (via fallback)',
             isLastKnown: true
         };
     }
@@ -281,8 +272,9 @@ class ConnorTracker {
     async getNearestAirport() {
         if (!this.shipData) return null;
 
-        // Major airports database (simplified)
+        // Major airports database (global coverage for ship operations)
         const airports = [
+            // European airports
             { name: 'Madrid Barajas', code: 'MAD', lat: 40.4719, lng: -3.5626, city: 'Madrid' },
             { name: 'Barcelona El Prat', code: 'BCN', lat: 41.2971, lng: 2.0785, city: 'Barcelona' },
             { name: 'Rome Fiumicino', code: 'FCO', lat: 41.8003, lng: 12.2389, city: 'Rome' },
@@ -292,6 +284,13 @@ class ConnorTracker {
             { name: 'Lisbon Portela', code: 'LIS', lat: 38.7813, lng: -9.1361, city: 'Lisbon' },
             { name: 'Gibraltar', code: 'GIB', lat: 36.1512, lng: -5.3467, city: 'Gibraltar' },
             { name: 'Malta International', code: 'MLA', lat: 35.8575, lng: 14.4775, city: 'Malta' },
+            // Asian airports (for current Japan Sea position)
+            { name: 'Seoul Incheon', code: 'ICN', lat: 37.4691, lng: 126.4505, city: 'Seoul' },
+            { name: 'Tokyo Haneda', code: 'HND', lat: 35.5494, lng: 139.7798, city: 'Tokyo' },
+            { name: 'Tokyo Narita', code: 'NRT', lat: 35.7720, lng: 140.3929, city: 'Tokyo' },
+            { name: 'Osaka Kansai', code: 'KIX', lat: 34.4348, lng: 135.2440, city: 'Osaka' },
+            { name: 'Busan Gimhae', code: 'PUS', lat: 35.1795, lng: 128.9382, city: 'Busan' },
+            { name: 'Fukuoka', code: 'FUK', lat: 33.5859, lng: 130.4451, city: 'Fukuoka' },
         ];
 
         let nearestAirport = null;
@@ -358,6 +357,7 @@ class ConnorTracker {
     // Estimate flight duration based on airports
     estimateFlightDuration(from, to) {
         const durations = {
+            // European routes
             'LHR-MAD': '2h 30m', 'MAD-LHR': '2h 15m',
             'LHR-BCN': '2h 15m', 'BCN-LHR': '2h 00m',
             'LHR-FCO': '2h 45m', 'FCO-LHR': '2h 30m',
@@ -366,15 +366,23 @@ class ConnorTracker {
             'LHR-PMI': '2h 20m', 'PMI-LHR': '2h 05m',
             'LHR-LIS': '2h 25m', 'LIS-LHR': '2h 10m',
             'LHR-GIB': '2h 45m', 'GIB-LHR': '2h 30m',
-            'LHR-MLA': '3h 10m', 'MLA-LHR': '2h 55m'
+            'LHR-MLA': '3h 10m', 'MLA-LHR': '2h 55m',
+            // Asian routes (long haul)
+            'LHR-ICN': '11h 30m', 'ICN-LHR': '12h 45m',
+            'LHR-HND': '11h 45m', 'HND-LHR': '13h 30m',
+            'LHR-NRT': '11h 55m', 'NRT-LHR': '13h 40m',
+            'LHR-KIX': '12h 10m', 'KIX-LHR': '13h 55m',
+            'LHR-PUS': '12h 00m', 'PUS-LHR': '13h 15m',
+            'LHR-FUK': '12h 30m', 'FUK-LHR': '14h 00m'
         };
 
-        return durations[`${from}-${to}`] || '2h 30m';
+        return durations[`${from}-${to}`] || '12h 00m';
     }
 
     // Estimate flight prices
     estimateFlightPrice(from, to) {
         const basePrices = {
+            // European routes
             'LHR-MAD': 180, 'MAD-LHR': 190,
             'LHR-BCN': 150, 'BCN-LHR': 160,
             'LHR-FCO': 200, 'FCO-LHR': 210,
@@ -383,10 +391,17 @@ class ConnorTracker {
             'LHR-PMI': 170, 'PMI-LHR': 180,
             'LHR-LIS': 160, 'LIS-LHR': 170,
             'LHR-GIB': 250, 'GIB-LHR': 260,
-            'LHR-MLA': 300, 'MLA-LHR': 310
+            'LHR-MLA': 300, 'MLA-LHR': 310,
+            // Asian routes (long haul - more expensive)
+            'LHR-ICN': 650, 'ICN-LHR': 680,
+            'LHR-HND': 750, 'HND-LHR': 780,
+            'LHR-NRT': 720, 'NRT-LHR': 750,
+            'LHR-KIX': 700, 'KIX-LHR': 730,
+            'LHR-PUS': 680, 'PUS-LHR': 710,
+            'LHR-FUK': 760, 'FUK-LHR': 790
         };
 
-        return `£${basePrices[`${from}-${to}`] || 200}`;
+        return `£${basePrices[`${from}-${to}`] || 700}`;
     }
 
     // Calculate total travel time for BEFF to reach Connor
@@ -456,11 +471,24 @@ class ConnorTracker {
 
     // Get formatted location name
     async getLocationName(lat, lng) {
-        // Simple location naming based on coordinates
+        // Global location naming based on coordinates
+        // European waters
         if (lat > 40 && lat < 44 && lng > -6 && lng < 3) return "Western Mediterranean";
         if (lat > 35 && lat < 40 && lng > -10 && lng < 5) return "Southern Spain/Gibraltar";
         if (lat > 30 && lat < 37 && lng > 10 && lng < 20) return "Central Mediterranean";
         if (lat > 40 && lat < 60 && lng > -15 && lng < 0) return "Bay of Biscay/Atlantic";
+        if (lat > 50 && lat < 52 && lng > -2 && lng < 2) return "English Channel";
+
+        // Asian waters
+        if (lat > 33 && lat < 42 && lng > 127 && lng < 142) return "Japan Sea";
+        if (lat > 34 && lat < 38 && lng > 124 && lng < 130) return "Korea Strait";
+        if (lat > 25 && lat < 35 && lng > 120 && lng < 130) return "East China Sea";
+        if (lat > 30 && lat < 40 && lng > 135 && lng < 145) return "Pacific Ocean (Japan)";
+
+        // General areas
+        if (lat > 10 && lat < 40 && lng > 100 && lng < 150) return "Western Pacific";
+        if (lat > 50 && lat < 70 && lng > -10 && lng < 30) return "North Sea/Baltic";
+
         return "At sea";
     }
 }

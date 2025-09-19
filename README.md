@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# TrackingConnor
-=======
 # 🚢 Connor Tracker
 
 A real-time ship tracking website for Connor aboard RFA Tidespring, designed to help BEFF stay connected across the waves.
@@ -79,4 +76,3 @@ To run locally:
 ---
 
 Made with ❤️ for BEFF to track Connor • Updates every 30 minutes
->>>>>>> ee3b090 (Initial commit: Connor Tracker with real AIS data integration)
