@@ -39,6 +39,36 @@ function makeRequest(url, options = {}) {
   });
 }
 
+// Try Sinay API for real AIS data (500 free calls per month)
+async function trySinayAPI(mmsi) {
+  try {
+    console.log('Trying Sinay API...');
+    const response = await makeRequest(`https://api.sinay.ai/api/v1/vessels/${mmsi}`);
+
+    if (response.statusCode === 200) {
+      const jsonData = JSON.parse(response.data);
+
+      if (jsonData.position && jsonData.position.latitude && jsonData.position.longitude) {
+        console.log('Sinay API returned valid data');
+        return {
+          mmsi: mmsi,
+          name: jsonData.name || 'RFA TIDESPRING',
+          latitude: parseFloat(jsonData.position.latitude),
+          longitude: parseFloat(jsonData.position.longitude),
+          speed: parseFloat(jsonData.speed) || 0,
+          course: parseFloat(jsonData.course) || 0,
+          status: jsonData.status || 'At Sea',
+          timestamp: new Date().toISOString(),
+          source: 'Sinay'
+        };
+      }
+    }
+  } catch (error) {
+    console.log('Sinay API failed:', error.message);
+  }
+  return null;
+}
+
 exports.handler = async (event, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -60,6 +90,16 @@ exports.handler = async (event, context) => {
 
   try {
     console.log('🚢 Fetching real AIS data for MMSI:', MMSI);
+
+    // First: Try Sinay API (500 free calls per month)
+    const sinayData = await trySinayAPI(MMSI);
+    if (sinayData) {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify(sinayData)
+      };
+    }
 
     // Try VesselFinder API
     try {
@@ -156,23 +196,99 @@ exports.handler = async (event, context) => {
       console.log('AISHub failed:', error.message);
     }
 
-    // If all APIs fail, return known real position data
-    console.log('All APIs failed, but returning success with verified real coordinates');
+    // Try multiple AIS APIs with different approaches
+    const additionalSources = [
+      {
+        name: 'VesselTracker',
+        url: `https://www.vesseltracker.com/en/Ships/${MMSI}.html`
+      },
+      {
+        name: 'FleetMon',
+        url: `https://www.fleetmon.com/vessels/${MMSI}`
+      },
+      {
+        name: 'MarineTraffic-API',
+        url: `https://services.marinetraffic.com/api/exportvessels/v:3/protocol:jsono/mmsi:${MMSI}/timespan:20`
+      }
+    ];
+
+    for (const source of additionalSources) {
+      try {
+        console.log(`Trying ${source.name}...`);
+        const response = await makeRequest(source.url);
+
+        if (response.statusCode === 200) {
+          console.log(`${source.name} response received`);
+
+          // Extract coordinates using multiple regex patterns
+          const patterns = [
+            /latitude["\s:]+([+-]?\d+\.?\d*)/i,
+            /lat["\s:]+([+-]?\d+\.?\d*)/i,
+            /"lat"[:\s]*([+-]?\d+\.?\d*)/i,
+            /position[^}]*lat[^}]*?([+-]?\d+\.?\d*)/i
+          ];
+
+          const lonPatterns = [
+            /longitude["\s:]+([+-]?\d+\.?\d*)/i,
+            /lon[g]?["\s:]+([+-]?\d+\.?\d*)/i,
+            /"lon"[:\s]*([+-]?\d+\.?\d*)/i,
+            /position[^}]*lon[^}]*?([+-]?\d+\.?\d*)/i
+          ];
+
+          let lat = null, lon = null;
+
+          for (const pattern of patterns) {
+            const match = response.data.match(pattern);
+            if (match) {
+              lat = parseFloat(match[1]);
+              break;
+            }
+          }
+
+          for (const pattern of lonPatterns) {
+            const match = response.data.match(pattern);
+            if (match) {
+              lon = parseFloat(match[1]);
+              break;
+            }
+          }
+
+          if (lat && lon && lat !== 0 && lon !== 0) {
+            console.log(`Found coordinates from ${source.name}: ${lat}, ${lon}`);
+            return {
+              statusCode: 200,
+              headers,
+              body: JSON.stringify({
+                mmsi: MMSI,
+                name: 'RFA TIDESPRING',
+                latitude: lat,
+                longitude: lon,
+                speed: 0,
+                course: 0,
+                status: 'At Sea',
+                timestamp: new Date().toISOString(),
+                source: source.name
+              })
+            };
+          }
+        }
+      } catch (error) {
+        console.log(`${source.name} failed:`, error.message);
+      }
+    }
+
+    // All APIs failed - return error instead of fake data
+    console.log('All AIS data sources failed');
 
     return {
-      statusCode: 200,
+      statusCode: 404,
       headers,
       body: JSON.stringify({
+        error: 'No live AIS data available',
+        message: 'All real-time ship tracking sources failed to return current position',
         mmsi: MMSI,
-        name: 'RFA TIDESPRING',
-        latitude: 35.08466,  // Real position from manual tracking
-        longitude: 129.10211, // Real position from manual tracking
-        speed: 3.9,
-        course: 45,
-        status: 'At Sea',
         timestamp: new Date().toISOString(),
-        source: 'Backend-VerifiedPosition',
-        note: 'Real coordinates from ship tracking verification'
+        attempted_sources: ['VesselFinder', 'AISHub', 'VesselTracker', 'FleetMon', 'MarineTraffic']
       })
     };
 

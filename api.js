@@ -32,6 +32,9 @@ class ConnorTracker {
                         this.storeHistoricalData(shipData);
                         return shipData;
                     }
+                } else if (response.status === 404) {
+                    const errorData = await response.json();
+                    console.log('⚠️ Backend: No live AIS data available from any source:', errorData.attempted_sources);
                 } else {
                     console.log('Backend returned error:', response.status, response.statusText);
                 }
