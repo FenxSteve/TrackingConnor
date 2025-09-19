@@ -1,4 +1,4 @@
-console.log('🔧 api.js loading... v1.3.2 - Reliable Fallback with Real Position');
+console.log('🔧 api.js loading... v1.3.3 - Fallback Debug Added');
 
 class ConnorTracker {
     constructor() {
@@ -76,6 +76,7 @@ class ConnorTracker {
                 // Use real position fallback when APIs fail
                 console.log('All live APIs failed, using verified real position from ship tracking sites');
                 shipData = this.getManualTrackingFallbackSync();
+                console.log('Fallback data loaded:', shipData);
                 this.shipData = shipData;
                 this.lastUpdate = new Date();
                 this.storeHistoricalData(shipData);
