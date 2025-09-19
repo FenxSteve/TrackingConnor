@@ -1,4 +1,4 @@
-console.log('🔧 api.js loading... v1.3.3 - Fallback Debug Added');
+console.log('🔧 api.js loading... v1.4.0 - Real Backend AIS Data');
 
 class ConnorTracker {
     constructor() {
@@ -12,15 +12,37 @@ class ConnorTracker {
         this.maxReconnectAttempts = 5;
     }
 
-    // Get ship data from real AIS sources
+    // Get ship data from real AIS sources via backend
     async getShipData() {
         try {
-            console.log('Starting ship data retrieval for MMSI:', this.RFA_TIDESPRING_MMSI);
+            console.log('Starting real AIS data retrieval for MMSI:', this.RFA_TIDESPRING_MMSI);
 
-            // Try multiple real AIS data sources in sequence
+            // First attempt: Use our backend endpoint for real AIS data
+            try {
+                console.log('Fetching real AIS data from backend...');
+                const response = await fetch('/.netlify/functions/ship-data');
+
+                if (response.ok) {
+                    const shipData = await response.json();
+
+                    if (shipData && shipData.latitude && shipData.longitude) {
+                        console.log('✅ Real AIS data retrieved from backend:', shipData);
+                        this.shipData = shipData;
+                        this.lastUpdate = new Date();
+                        this.storeHistoricalData(shipData);
+                        return shipData;
+                    }
+                } else {
+                    console.log('Backend returned error:', response.status, response.statusText);
+                }
+            } catch (error) {
+                console.log('Backend AIS fetch failed:', error.message);
+            }
+
+            // Fallback to direct API attempts if backend fails
             let shipData = null;
 
-            // First attempt: VesselFinder with better CORS proxy
+            // Second attempt: VesselFinder with better CORS proxy
             try {
                 shipData = await this.getVesselFinderData();
                 if (shipData) {
@@ -30,7 +52,7 @@ class ConnorTracker {
                 console.log('VesselFinder failed:', error.message);
             }
 
-            // Second attempt: MarineTraffic scraping
+            // Third attempt: MarineTraffic scraping
             if (!shipData) {
                 try {
                     shipData = await this.getMarineTrafficData();
@@ -42,7 +64,7 @@ class ConnorTracker {
                 }
             }
 
-            // Third attempt: AISHub direct
+            // Fourth attempt: AISHub direct
             if (!shipData) {
                 try {
                     shipData = await this.getAISHubData();
@@ -54,18 +76,6 @@ class ConnorTracker {
                 }
             }
 
-            // Fourth attempt: ShipFinder API
-            if (!shipData) {
-                try {
-                    shipData = await this.getShipFinderData();
-                    if (shipData) {
-                        console.log('Successfully got data from ShipFinder');
-                    }
-                } catch (error) {
-                    console.log('ShipFinder failed:', error.message);
-                }
-            }
-
             if (shipData) {
                 console.log(`Ship data retrieved from ${shipData.source}:`, shipData);
                 this.shipData = shipData;
@@ -74,7 +84,7 @@ class ConnorTracker {
                 return shipData;
             } else {
                 // Use real position fallback when APIs fail
-                console.log('All live APIs failed, using verified real position from ship tracking sites');
+                console.log('All live APIs and backend failed, using verified real position from ship tracking sites');
                 shipData = this.getManualTrackingFallbackSync();
                 console.log('Fallback data loaded:', shipData);
                 this.shipData = shipData;
