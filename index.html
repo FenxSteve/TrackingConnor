@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BEFF Tracker - RFA Tidespring</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🚢 Connor Tracker</h1>
+            <p class="subtitle">Tracking Connor aboard RFA Tidespring</p>
+            <div class="status" id="status">Loading...</div>
+        </header>
+
+        <div class="dashboard">
+            <div class="stat-card primary">
+                <h3>DISTANCE TO CONNOR</h3>
+                <div class="stat-value" id="distance">--</div>
+                <div class="stat-unit">miles</div>
+            </div>
+
+            <div class="stat-card secondary">
+                <h3>TIME TO CONNOR</h3>
+                <div class="stat-value" id="travel-time">--</div>
+                <div class="stat-unit">hours</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>SHIP SPEED</h3>
+                <div class="stat-value" id="ship-speed">--</div>
+                <div class="stat-unit">knots</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>LAST SEEN</h3>
+                <div class="stat-value" id="last-update">--</div>
+                <div class="stat-unit">ago</div>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+
+        <div class="details">
+            <div class="detail-section">
+                <h3>Current Position</h3>
+                <p id="coordinates">--</p>
+                <p id="location-name">--</p>
+            </div>
+
+            <div class="detail-section">
+                <h3>Nearest Airport</h3>
+                <p id="nearest-airport">Calculating...</p>
+                <p id="airport-distance">--</p>
+            </div>
+
+            <div class="detail-section">
+                <h3>Next Available Flights</h3>
+                <div id="flight-info">
+                    <p class="flight-route">BEFF TO CONNOR: <span id="to-connor-flight">Searching...</span></p>
+                    <p class="flight-route">CONNOR TO BEFF: <span id="from-connor-flight">Searching...</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <h3>Distance History</h3>
+            <canvas id="distance-chart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <footer>
+        <p>Made with ❤️ for BEFF to track Connor • Auto-refreshes every 30 minutes</p>
+        <p class="last-refresh">Last refresh: <span id="last-refresh">--</span></p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="api.js"></script>
+    <script src="map.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
