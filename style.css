@@ -263,8 +263,8 @@ body {
     text-decoration: underline;
 }
 
-/* History Chart */
-.history-section {
+/* Fun Distance Section */
+.fun-distance-section {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -273,21 +273,103 @@ body {
     margin-bottom: 30px;
 }
 
-.history-section h3 {
-    color: #4CAF50;
-    margin-bottom: 20px;
-    font-size: 1.1rem;
+.fun-distance-section h3 {
+    color: #FFC107;
+    margin-bottom: 25px;
+    font-size: 1.3rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
     text-align: center;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
 }
 
-#distance-chart {
-    width: 100%;
-    height: 200px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
+.fun-distances {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.fun-distance-item {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.fun-distance-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.fun-distance-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #FF6B6B, #4ECDC4, #45B7D1, #96CEB4, #FECA57);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.fun-distance-item:hover::before {
+    opacity: 1;
+}
+
+.fun-icon {
+    font-size: 2rem;
+    line-height: 1;
+    min-width: 2.5rem;
+    text-align: center;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.fun-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #FFC107;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    min-width: 100px;
+    text-align: right;
+}
+
+.fun-unit {
+    flex: 1;
+    font-size: 0.95rem;
+    opacity: 0.9;
+    line-height: 1.3;
+}
+
+@media (max-width: 768px) {
+    .fun-distances {
+        grid-template-columns: 1fr;
+    }
+
+    .fun-distance-item {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .fun-icon {
+        font-size: 1.8rem;
+        min-width: 2rem;
+    }
+
+    .fun-value {
+        font-size: 1.2rem;
+        min-width: 80px;
+    }
+
+    .fun-unit {
+        font-size: 0.9rem;
+    }
 }
 
 /* Footer */

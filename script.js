@@ -26,7 +26,7 @@ class BeffTrackerApp {
             beffMap.showHistoricalData(beffTracker.historicalData);
         }
 
-        this.drawDistanceChart();
+        this.updateFunDistances();
 
         console.log('✅ Connor Tracker initialization complete');
     }
@@ -72,8 +72,8 @@ class BeffTrackerApp {
                 // Update details
                 await this.updateDetails();
 
-                // Update chart
-                this.drawDistanceChart();
+                // Update fun distance measurements
+                this.updateFunDistances();
 
                 // Update status based on data source
                 this.updateStatus(`✅ Connected • Live data from ${shipData.source}`, 'connected');
@@ -174,85 +174,74 @@ class BeffTrackerApp {
         }
     }
 
-    drawDistanceChart() {
-        const canvas = document.getElementById('distance-chart');
-        const ctx = canvas.getContext('2d');
+    updateFunDistances() {
+        const distance = beffTracker.getDistanceToConnor();
+        if (!distance) return;
 
-        // Clear canvas
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const distanceInMeters = distance * 1609.34; // Convert miles to meters
+        const distanceInKm = distance * 1.609344; // Convert miles to km
 
-        if (beffTracker.historicalData.length < 2) return;
+        // Fun distance calculations
+        const calculations = {
+            // 🦆 Rubber ducks (average 8cm each)
+            rubberDucks: Math.round(distanceInMeters / 0.08),
 
-        const data = beffTracker.historicalData.slice(-24); // Last 24 data points
-        const maxDistance = Math.max(...data.map(d => d.distance));
-        const minDistance = Math.min(...data.map(d => d.distance));
+            // 🏊‍♂️ Swimming at Olympic pace (2.1 m/s average)
+            swimmingTime: this.formatTime(distanceInMeters / 2.1),
 
-        // Set up chart dimensions
-        const padding = 40;
-        const chartWidth = canvas.width - padding * 2;
-        const chartHeight = canvas.height - padding * 2;
+            // 🚶‍♂️ Walking at casual pace (1.4 m/s)
+            walkingTime: this.formatTime(distanceInMeters / 1.4),
 
-        // Draw grid
-        ctx.strokeStyle = '#e0e0e0';
-        ctx.lineWidth = 1;
+            // 🦅 Flying like an eagle (20 m/s average speed)
+            birdTime: this.formatTime(distanceInMeters / 20),
 
-        // Horizontal grid lines
-        for (let i = 0; i <= 5; i++) {
-            const y = padding + (chartHeight / 5) * i;
-            ctx.beginPath();
-            ctx.moveTo(padding, y);
-            ctx.lineTo(canvas.width - padding, y);
-            ctx.stroke();
+            // 🐌 Garden snail pace (0.001 m/s)
+            snailTime: this.formatTime(distanceInMeters / 0.001),
+
+            // 🍕 Pizza slices (average 15cm each)
+            pizzaSlices: Math.round(distanceInMeters / 0.15),
+
+            // ☕ Coffee cups BEFF drinks (assuming 3 per day, distance in days)
+            coffeeCups: Math.round((distanceInMeters / 1.4) / 86400 * 3), // Walking time in days * 3 cups
+
+            // 🦘 Kangaroo hops (average 8m per hop)
+            kangarooHops: Math.round(distanceInMeters / 8)
+        };
+
+        // Update the DOM
+        this.safeUpdateElement('rubber-ducks', calculations.rubberDucks.toLocaleString());
+        this.safeUpdateElement('swimming-time', calculations.swimmingTime);
+        this.safeUpdateElement('walking-time', calculations.walkingTime);
+        this.safeUpdateElement('bird-time', calculations.birdTime);
+        this.safeUpdateElement('snail-time', calculations.snailTime);
+        this.safeUpdateElement('pizza-slices', calculations.pizzaSlices.toLocaleString());
+        this.safeUpdateElement('coffee-cups', calculations.coffeeCups.toLocaleString());
+        this.safeUpdateElement('kangaroo-hops', calculations.kangarooHops.toLocaleString());
+    }
+
+    formatTime(seconds) {
+        if (seconds < 60) {
+            return `${Math.round(seconds)} seconds`;
+        } else if (seconds < 3600) {
+            const minutes = Math.round(seconds / 60);
+            return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        } else if (seconds < 86400) {
+            const hours = Math.round(seconds / 3600);
+            return `${hours} hour${hours !== 1 ? 's' : ''}`;
+        } else if (seconds < 31536000) {
+            const days = Math.round(seconds / 86400);
+            return `${days} day${days !== 1 ? 's' : ''}`;
+        } else {
+            const years = Math.round(seconds / 31536000);
+            return `${years} year${years !== 1 ? 's' : ''}`;
         }
+    }
 
-        // Draw data line
-        ctx.strokeStyle = '#2196F3';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-
-        data.forEach((point, index) => {
-            const x = padding + (chartWidth / (data.length - 1)) * index;
-            const normalizedDistance = (point.distance - minDistance) / (maxDistance - minDistance);
-            const y = padding + chartHeight - (normalizedDistance * chartHeight);
-
-            if (index === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        });
-
-        ctx.stroke();
-
-        // Draw data points
-        ctx.fillStyle = '#2196F3';
-        data.forEach((point, index) => {
-            const x = padding + (chartWidth / (data.length - 1)) * index;
-            const normalizedDistance = (point.distance - minDistance) / (maxDistance - minDistance);
-            const y = padding + chartHeight - (normalizedDistance * chartHeight);
-
-            ctx.beginPath();
-            ctx.arc(x, y, 4, 0, 2 * Math.PI);
-            ctx.fill();
-        });
-
-        // Draw labels
-        ctx.fillStyle = '#666';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'right';
-
-        // Y-axis labels
-        for (let i = 0; i <= 5; i++) {
-            const value = minDistance + ((maxDistance - minDistance) / 5) * (5 - i);
-            const y = padding + (chartHeight / 5) * i;
-            ctx.fillText(Math.round(value) + 'mi', padding - 10, y + 4);
+    safeUpdateElement(id, value) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
         }
-
-        // Chart title
-        ctx.fillStyle = '#333';
-        ctx.font = '14px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('Distance to BEFF Over Time', canvas.width / 2, 20);
     }
 
     updateStatus(message, type) {
@@ -302,7 +291,7 @@ window.debugConnorTracker = function() {
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 DOM loaded, starting Connor Tracker v1.3.3 - Final Fix...');
+    console.log('🚀 DOM loaded, starting Connor Tracker v1.5.0 - Fun Distance Edition...');
 
     // Check if required classes exist
     if (typeof ConnorTracker === 'undefined') {
