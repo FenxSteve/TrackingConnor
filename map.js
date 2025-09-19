@@ -1,4 +1,4 @@
-console.log('🗺️ map.js loading... v1.3.1 - Improved CORS Proxies');
+console.log('🗺️ map.js loading... v1.3.2 - Reliable Fallback');
 
 class BeffMap {
     constructor() {
