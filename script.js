@@ -28,6 +28,12 @@ class BeffTrackerApp {
 
         this.updateFunDistances();
 
+        // Force broccoli update after 2 seconds as backup
+        setTimeout(() => {
+            console.log('🥦 Forcing broccoli update...');
+            this.updateFunDistances();
+        }, 2000);
+
         console.log('✅ Connor Tracker initialization complete');
     }
 
