@@ -57,34 +57,34 @@ class BeffTrackerApp {
             // Get ship data
             const shipData = await beffTracker.getShipData();
 
-            // Update map
-            beffMap.updateShipPosition(shipData);
+            if (shipData) {
+                // Update map
+                beffMap.updateShipPosition(shipData);
 
-            // Update dashboard
-            await this.updateDashboard();
+                // Update dashboard
+                await this.updateDashboard();
 
-            // Update details
-            await this.updateDetails();
+                // Update details
+                await this.updateDetails();
 
-            // Update chart
-            this.drawDistanceChart();
+                // Update chart
+                this.drawDistanceChart();
 
-            // Update status based on data source
-            if (shipData.isLastKnown) {
-                this.updateStatus('⚠️ Using estimated position • Real data unavailable', 'warning');
+                // Update status based on data source
+                this.updateStatus(`✅ Connected • Live data from ${shipData.source}`, 'connected');
+
+                // Update last refresh time
+                document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString();
             } else {
-                this.updateStatus(`Connected • Tracking Connor via ${shipData.source}`, 'connected');
+                throw new Error('No ship data received');
             }
-
-            // Update last refresh time
-            document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString();
 
         } catch (error) {
             console.error('Update failed:', error);
-            this.updateStatus('Connection lost • Using last known position', 'warning');
+            this.updateStatus('❌ All AIS sources failed • Check console for details', 'error');
 
-            // Retry after 30 seconds
-            setTimeout(() => this.updateAll(), 30000);
+            // Retry after 2 minutes
+            setTimeout(() => this.updateAll(), 120000);
         } finally {
             this.isLoading = false;
         }

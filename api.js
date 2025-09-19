@@ -13,59 +13,127 @@ class ConnorTracker {
     // Get ship data from real AIS sources
     async getShipData() {
         try {
-            // Try multiple AIS data sources
-            let shipData = await this.getVesselFinderData() ||
-                          await this.getMarineTrafficData() ||
-                          await this.getVesselFinderPublicData() ||
-                          await this.getAISStreamWebSocket();
+            console.log('Starting ship data retrieval for MMSI:', this.RFA_TIDESPRING_MMSI);
 
-            // If no real data available, show last known position with warning
+            // Try multiple real AIS data sources in sequence
+            let shipData = null;
+
+            // First attempt: VesselFinder with better CORS proxy
+            try {
+                shipData = await this.getVesselFinderData();
+                if (shipData) {
+                    console.log('Successfully got data from VesselFinder');
+                }
+            } catch (error) {
+                console.log('VesselFinder failed:', error.message);
+            }
+
+            // Second attempt: MarineTraffic scraping
             if (!shipData) {
-                shipData = this.getLastKnownPosition();
-                console.log('Using fallback position data - real AIS data not accessible from browser');
-            } else {
-                console.log(`Successfully retrieved ship data from ${shipData.source}`);
+                try {
+                    shipData = await this.getMarineTrafficData();
+                    if (shipData) {
+                        console.log('Successfully got data from MarineTraffic');
+                    }
+                } catch (error) {
+                    console.log('MarineTraffic failed:', error.message);
+                }
             }
 
-            this.shipData = shipData;
-            this.lastUpdate = new Date();
+            // Third attempt: AISHub direct
+            if (!shipData) {
+                try {
+                    shipData = await this.getAISHubData();
+                    if (shipData) {
+                        console.log('Successfully got data from AISHub');
+                    }
+                } catch (error) {
+                    console.log('AISHub failed:', error.message);
+                }
+            }
 
-            // Store historical data only if it's real data
-            if (shipData && !shipData.isLastKnown) {
+            // Fourth attempt: ShipFinder API
+            if (!shipData) {
+                try {
+                    shipData = await this.getShipFinderData();
+                    if (shipData) {
+                        console.log('Successfully got data from ShipFinder');
+                    }
+                } catch (error) {
+                    console.log('ShipFinder failed:', error.message);
+                }
+            }
+
+            if (shipData) {
+                console.log(`Ship data retrieved from ${shipData.source}:`, shipData);
+                this.shipData = shipData;
+                this.lastUpdate = new Date();
                 this.storeHistoricalData(shipData);
+                return shipData;
+            } else {
+                throw new Error('All AIS data sources failed');
             }
 
-            return shipData;
         } catch (error) {
-            console.error('Error fetching ship data:', error);
-            // Return last known position as fallback
-            return this.getLastKnownPosition();
+            console.error('All AIS APIs failed:', error);
+            throw error; // Don't use fallback - force error handling
         }
     }
 
     // Try to get data from VesselFinder via CORS proxy
     async getVesselFinderData() {
-        try {
-            // Use a CORS proxy to access VesselFinder
-            const corsProxy = 'https://api.allorigins.win/raw?url=';
-            const apiUrl = encodeURIComponent(`https://www.vesselfinder.com/api/pub/click/${this.RFA_TIDESPRING_MMSI}`);
-            const response = await fetch(`${corsProxy}${apiUrl}`);
+        const corsProxies = [
+            'https://api.allorigins.win/get?url=',
+            'https://corsproxy.io/?',
+            'https://cors-anywhere.herokuapp.com/'
+        ];
 
-            if (response.ok) {
-                const text = await response.text();
-                const data = JSON.parse(text);
-                return this.parseVesselFinderResponse(data);
+        for (const proxy of corsProxies) {
+            try {
+                console.log(`Trying VesselFinder with proxy: ${proxy}`);
+                const apiUrl = encodeURIComponent(`https://www.vesselfinder.com/api/pub/vesselsearch?name=RFA TIDESPRING`);
+                const response = await fetch(`${proxy}${apiUrl}`, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const data = proxy.includes('allorigins') ? JSON.parse(result.contents) : result;
+                    return this.parseVesselFinderResponse(data);
+                }
+            } catch (error) {
+                console.log(`VesselFinder proxy ${proxy} failed:`, error.message);
+                continue;
             }
-        } catch (error) {
-            console.log('VesselFinder API not available:', error.message);
         }
         return null;
     }
 
-    // Try to get data from MarineTraffic via scraping approach (CORS-friendly)
+    // Try to get data from AISHub (has free tier)
+    async getAISHubData() {
+        try {
+            console.log('Trying AISHub API...');
+            const corsProxy = 'https://api.allorigins.win/get?url=';
+            const apiUrl = encodeURIComponent(`https://www.aishub.net/api/v1/single/${this.RFA_TIDESPRING_MMSI}`);
+            const response = await fetch(`${corsProxy}${apiUrl}`);
+
+            if (response.ok) {
+                const result = await response.json();
+                const data = JSON.parse(result.contents);
+                return this.parseAISHubResponse(data);
+            }
+        } catch (error) {
+            console.log('AISHub API not available:', error.message);
+        }
+        return null;
+    }
+
+    // Try to get data from MarineTraffic via scraping
     async getMarineTrafficData() {
         try {
-            // Use AllOrigins proxy to get MarineTraffic data
+            console.log('Trying MarineTraffic scraping...');
             const corsProxy = 'https://api.allorigins.win/get?url=';
             const mtUrl = encodeURIComponent(`https://www.marinetraffic.com/en/ais/details/ships/mmsi:${this.RFA_TIDESPRING_MMSI}`);
             const response = await fetch(`${corsProxy}${mtUrl}`);
@@ -80,38 +148,88 @@ class ConnorTracker {
         return null;
     }
 
-    // Try VesselFinder public API via different approach
-    async getVesselFinderPublicData() {
+    // Try ShipFinder API
+    async getShipFinderData() {
         try {
-            // Alternative approach using public vessel finder endpoints
-            const corsProxy = 'https://api.allorigins.win/get?url=';
-            const vfUrl = encodeURIComponent(`https://www.vesselfinder.com/vessels?name=RFA+TIDESPRING`);
-            const response = await fetch(`${corsProxy}${vfUrl}`);
+            console.log('Trying ShipFinder API...');
+            const corsProxy = 'https://corsproxy.io/?';
+            const apiUrl = encodeURIComponent(`https://www.myshiptracking.com/requests/vesselInfo.php?mmsi=${this.RFA_TIDESPRING_MMSI}`);
+            const response = await fetch(`${corsProxy}${apiUrl}`);
 
             if (response.ok) {
-                const result = await response.json();
-                return this.parseVesselFinderHTML(result.contents);
+                const data = await response.json();
+                return this.parseShipFinderResponse(data);
             }
         } catch (error) {
-            console.log('VesselFinder public API not available:', error.message);
+            console.log('ShipFinder API not available:', error.message);
         }
         return null;
     }
 
     // Parse different API response formats
     parseVesselFinderResponse(data) {
-        if (data && data.AIS) {
-            return {
-                mmsi: this.RFA_TIDESPRING_MMSI,
-                name: 'RFA TIDESPRING',
-                latitude: parseFloat(data.AIS.LATITUDE),
-                longitude: parseFloat(data.AIS.LONGITUDE),
-                speed: parseFloat(data.AIS.SPEED) || 0,
-                course: parseFloat(data.AIS.COURSE) || 0,
-                timestamp: data.AIS.TIMESTAMP || new Date().toISOString(),
-                status: data.AIS.STATUS || 'Unknown',
-                source: 'VesselFinder'
-            };
+        try {
+            if (data && data.length > 0) {
+                const vessel = data[0];
+                if (vessel.lat && vessel.lng) {
+                    return {
+                        mmsi: this.RFA_TIDESPRING_MMSI,
+                        name: 'RFA TIDESPRING',
+                        latitude: parseFloat(vessel.lat),
+                        longitude: parseFloat(vessel.lng),
+                        speed: parseFloat(vessel.sog) || 0,
+                        course: parseFloat(vessel.cog) || 0,
+                        timestamp: vessel.time || new Date().toISOString(),
+                        status: vessel.status || 'At sea',
+                        source: 'VesselFinder'
+                    };
+                }
+            }
+        } catch (error) {
+            console.log('Error parsing VesselFinder data:', error);
+        }
+        return null;
+    }
+
+    parseAISHubResponse(data) {
+        try {
+            if (data && data[0]) {
+                const vessel = data[0];
+                return {
+                    mmsi: this.RFA_TIDESPRING_MMSI,
+                    name: 'RFA TIDESPRING',
+                    latitude: parseFloat(vessel.LATITUDE),
+                    longitude: parseFloat(vessel.LONGITUDE),
+                    speed: parseFloat(vessel.SOG) || 0,
+                    course: parseFloat(vessel.COG) || 0,
+                    timestamp: vessel.TIME || new Date().toISOString(),
+                    status: 'At sea',
+                    source: 'AISHub'
+                };
+            }
+        } catch (error) {
+            console.log('Error parsing AISHub data:', error);
+        }
+        return null;
+    }
+
+    parseShipFinderResponse(data) {
+        try {
+            if (data && data.lat && data.lng) {
+                return {
+                    mmsi: this.RFA_TIDESPRING_MMSI,
+                    name: 'RFA TIDESPRING',
+                    latitude: parseFloat(data.lat),
+                    longitude: parseFloat(data.lng),
+                    speed: parseFloat(data.speed) || 0,
+                    course: parseFloat(data.course) || 0,
+                    timestamp: data.timestamp || new Date().toISOString(),
+                    status: data.status || 'At sea',
+                    source: 'ShipFinder'
+                };
+            }
+        } catch (error) {
+            console.log('Error parsing ShipFinder data:', error);
         }
         return null;
     }
