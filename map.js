@@ -1,4 +1,4 @@
-console.log('🗺️ map.js loading... v1.2.3');
+console.log('🗺️ map.js loading... v1.3.0 - CSP Fixed');
 
 class BeffMap {
     constructor() {

@@ -1,4 +1,4 @@
-console.log('🔧 api.js loading... v1.2.3');
+console.log('🔧 api.js loading... v1.3.0 - CSP Fixed');
 
 class ConnorTracker {
     constructor() {
