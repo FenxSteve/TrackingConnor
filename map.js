@@ -1,4 +1,4 @@
-console.log('🗺️ map.js loading... v1.3.2 - Reliable Fallback');
+console.log('🗺️ map.js loading... v1.3.3 - Function Name Fixed');
 
 class BeffMap {
     constructor() {
@@ -109,7 +109,7 @@ class BeffMap {
         }).addTo(this.map);
 
         // Calculate and display distance
-        const distance = beffTracker.getDistanceToBeff();
+        const distance = beffTracker.getDistanceToConnor();
         if (distance) {
             const midpoint = [
                 (homeLatLng[0] + shipLatLng[0]) / 2,
