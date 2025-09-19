@@ -14,7 +14,7 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self' 'unsafe-inline' data: https://unpkg.com https://*.tile.openstreetmap.org; img-src 'self' data: https://*.tile.openstreetmap.org; style-src 'self' 'unsafe-inline' https://unpkg.com; script-src 'self' 'unsafe-inline' https://unpkg.com; connect-src 'self' https://api.allorigins.win https://corsproxy.io https://cors-anywhere.herokuapp.com https://www.vesselfinder.com https://www.marinetraffic.com https://www.aishub.net https://www.myshiptracking.com"
+    Content-Security-Policy = "default-src 'self' 'unsafe-inline' data: https://unpkg.com https://*.tile.openstreetmap.org; img-src 'self' data: https://*.tile.openstreetmap.org; style-src 'self' 'unsafe-inline' https://unpkg.com; script-src 'self' 'unsafe-inline' https://unpkg.com; connect-src 'self' https://api.allorigins.win https://thingproxy.freeboard.io https://api.codetabs.com https://www.vesselfinder.com https://www.marinetraffic.com https://www.aishub.net https://www.myshiptracking.com"
 
 [[headers]]
   # Cache static assets for 1 year

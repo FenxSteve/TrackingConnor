@@ -1,4 +1,4 @@
-console.log('🔧 api.js loading... v1.3.0 - CSP Fixed');
+console.log('🔧 api.js loading... v1.3.1 - Improved CORS Proxies');
 
 class ConnorTracker {
     constructor() {
@@ -86,24 +86,38 @@ class ConnorTracker {
     async getVesselFinderData() {
         const corsProxies = [
             'https://api.allorigins.win/get?url=',
-            'https://corsproxy.io/?',
-            'https://cors-anywhere.herokuapp.com/'
+            'https://thingproxy.freeboard.io/fetch/',
+            'https://api.codetabs.com/v1/proxy?quest='
         ];
 
         for (const proxy of corsProxies) {
             try {
                 console.log(`Trying VesselFinder with proxy: ${proxy}`);
                 const apiUrl = encodeURIComponent(`https://www.vesselfinder.com/api/pub/vesselsearch?name=RFA TIDESPRING`);
-                const response = await fetch(`${proxy}${apiUrl}`, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                    }
-                });
+                // Remove custom headers that cause CORS issues
+                const response = await fetch(`${proxy}${apiUrl}`);
 
                 if (response.ok) {
                     const result = await response.json();
-                    const data = proxy.includes('allorigins') ? JSON.parse(result.contents) : result;
-                    return this.parseVesselFinderResponse(data);
+                    let data;
+
+                    if (proxy.includes('allorigins')) {
+                        // Handle allorigins response format
+                        if (result.contents) {
+                            try {
+                                data = JSON.parse(result.contents);
+                            } catch (e) {
+                                console.log('AllOrigins returned HTML, not JSON');
+                                continue;
+                            }
+                        }
+                    } else {
+                        data = result;
+                    }
+
+                    if (data) {
+                        return this.parseVesselFinderResponse(data);
+                    }
                 }
             } catch (error) {
                 console.log(`VesselFinder proxy ${proxy} failed:`, error.message);
