@@ -176,8 +176,12 @@ class BeffTrackerApp {
 
     updateFunDistances() {
         const distance = beffTracker.getDistanceToConnor();
-        if (!distance) return;
+        if (!distance) {
+            console.log('No distance available for fun calculations');
+            return;
+        }
 
+        console.log('Distance to Connor:', distance, 'miles');
         const distanceInMeters = distance * 1609.34; // Convert miles to meters
         const distanceInKm = distance * 1.609344; // Convert miles to km
 
@@ -204,6 +208,9 @@ class BeffTrackerApp {
             // 🦘 Kangaroo hops (average 8m per hop)
             kangarooHops: Math.round(distanceInMeters / 8)
         };
+
+        // Log all calculations for debugging
+        console.log('Fun distance calculations:', calculations);
 
         // Update the DOM
         this.safeUpdateElement('rubber-ducks', calculations.rubberDucks.toLocaleString());
@@ -237,6 +244,9 @@ class BeffTrackerApp {
         const element = document.getElementById(id);
         if (element) {
             element.textContent = value;
+            console.log(`Updated ${id}: ${value}`);
+        } else {
+            console.error(`Element not found: ${id}`);
         }
     }
 
