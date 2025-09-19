@@ -6,10 +6,13 @@ class BeffTrackerApp {
     }
 
     async init() {
+        console.log('🚢 Connor Tracker initializing...');
+
         // Initialize map
         beffMap = new BeffMap();
 
-        // Load initial data
+        // Force immediate data load with detailed logging
+        console.log('Starting immediate data load...');
         await this.updateAll();
 
         // Set up auto-refresh every 30 minutes
@@ -24,6 +27,8 @@ class BeffTrackerApp {
         }
 
         this.drawDistanceChart();
+
+        console.log('✅ Connor Tracker initialization complete');
     }
 
     setupEventListeners() {
@@ -277,11 +282,47 @@ class BeffTrackerApp {
         const days = Math.floor(hours / 24);
         return `${days}d`;
     }
+
+    // Debug function - accessible from browser console
+    async debugForceUpdate() {
+        console.log('🔧 Force updating Connor tracker...');
+        this.updateStatus('🔧 Manual debug update...', 'loading');
+        await this.updateAll();
+    }
 }
+
+// Make debug function globally accessible
+window.debugConnorTracker = function() {
+    if (window.connorTrackerApp) {
+        window.connorTrackerApp.debugForceUpdate();
+    } else {
+        console.log('❌ Connor Tracker app not ready yet');
+    }
+};
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    const app = new BeffTrackerApp();
+    console.log('🚀 DOM loaded, starting Connor Tracker...');
+
+    // Check if required classes exist
+    if (typeof ConnorTracker === 'undefined') {
+        console.error('❌ ConnorTracker class not found! Check api.js loading');
+        return;
+    }
+    if (typeof BeffMap === 'undefined') {
+        console.error('❌ BeffMap class not found! Check map.js loading');
+        return;
+    }
+
+    console.log('✅ All classes loaded, initializing app...');
+
+    try {
+        const app = new BeffTrackerApp();
+        window.connorTrackerApp = app; // Make accessible for debugging
+        console.log('✅ App initialized successfully');
+    } catch (error) {
+        console.error('❌ Failed to initialize app:', error);
+    }
 
     // Add some helpful tips to the console
     console.log(`
