@@ -302,7 +302,7 @@ window.debugConnorTracker = function() {
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 DOM loaded, starting Connor Tracker...');
+    console.log('🚀 DOM loaded, starting Connor Tracker v1.2.3...');
 
     // Check if required classes exist
     if (typeof ConnorTracker === 'undefined') {

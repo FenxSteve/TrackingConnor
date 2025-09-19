@@ -1,3 +1,5 @@
+console.log('🔧 api.js loading... v1.2.3');
+
 class ConnorTracker {
     constructor() {
         this.homeLocation = { lat: 51.4816, lng: -0.1297 }; // SW8 4RU coordinates (BEFF's location)

@@ -1,3 +1,5 @@
+console.log('🗺️ map.js loading... v1.2.3');
+
 class BeffMap {
     constructor() {
         this.map = null;
