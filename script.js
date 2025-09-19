@@ -73,7 +73,7 @@ class BeffTrackerApp {
                 await this.updateDetails();
 
                 // Update fun distance measurements
-                this.updateFunDistances();
+                setTimeout(() => this.updateFunDistances(), 100);
 
                 // Update status based on data source
                 this.updateStatus(`✅ Connected • Live data from ${shipData.source}`, 'connected');
