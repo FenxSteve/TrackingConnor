@@ -201,9 +201,6 @@ class BeffTrackerApp {
             // 🍕 Pizza slices (average 15cm each)
             pizzaSlices: Math.round(distanceInMeters / 0.15),
 
-            // ☕ Coffee cups BEFF drinks (assuming 3 per day, distance in days)
-            coffeeCups: Math.round((distanceInMeters / 1.4) / 86400 * 3), // Walking time in days * 3 cups
-
             // 🦘 Kangaroo hops (average 8m per hop)
             kangarooHops: Math.round(distanceInMeters / 8)
         };
@@ -215,7 +212,6 @@ class BeffTrackerApp {
         this.safeUpdateElement('bird-time', calculations.birdTime);
         this.safeUpdateElement('snail-time', calculations.snailTime);
         this.safeUpdateElement('pizza-slices', calculations.pizzaSlices.toLocaleString());
-        this.safeUpdateElement('coffee-cups', calculations.coffeeCups.toLocaleString());
         this.safeUpdateElement('kangaroo-hops', calculations.kangarooHops.toLocaleString());
     }
 
