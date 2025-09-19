@@ -198,8 +198,8 @@ class BeffTrackerApp {
             // 🐌 Garden snail pace (0.001 m/s)
             snailTime: this.formatTime(distanceInMeters / 0.001),
 
-            // 🍕 Pizza slices (average 15cm each)
-            pizzaSlices: Math.round(distanceInMeters / 0.15),
+            // 🥦 Broccoli florets (average 3cm each)
+            broccoliFlorets: Math.round(distanceInMeters / 0.03),
 
             // 🦘 Kangaroo hops (average 8m per hop)
             kangarooHops: Math.round(distanceInMeters / 8)
@@ -211,7 +211,7 @@ class BeffTrackerApp {
         this.safeUpdateElement('walking-time', calculations.walkingTime);
         this.safeUpdateElement('bird-time', calculations.birdTime);
         this.safeUpdateElement('snail-time', calculations.snailTime);
-        this.safeUpdateElement('pizza-slices', calculations.pizzaSlices.toLocaleString());
+        this.safeUpdateElement('broccoli-florets', calculations.broccoliFlorets.toLocaleString());
         this.safeUpdateElement('kangaroo-hops', calculations.kangarooHops.toLocaleString());
     }
 
